@@ -12,5 +12,11 @@ end
 [~,x0] = pca(yEmbedded','centered',false,'Numcomponents',d+1);
 x0 = x0';
 
+
+%% whiten data
+% slows down convergence of the algorithm
+% [U,S,V] = svd(y);
+% y = S*V';
+% y = V(:,1:ToKeep)';
 end
 

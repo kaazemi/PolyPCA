@@ -1,81 +1,69 @@
 function [A,x,X,Exponents] = PolyPCA(y,d,maxDeg,fs)
-clc;
-algorithm = 'l2_Poly_PCA';
+%% Polynomial Prinicipal Component Analysis Algorithm
+% Inputs:
+% y: matrix of data to be fit
+% d: latent dimension
+% maxDeg: maximum polynomial degree to be fit
+% fs: sampling frequency (optional)
+% Outputs:
+% A: coefficients of the fit monomials
+% x: latents
+% X: monomials resulting from the latents
+% Exponents: monomial exponents in lexicographic order
+%%%%%%%%%% Copyright 2018 by Abbas Kazemipour %%%%%%%%%%%%%
+%%%%%%%%%%%% Last updated on 08-20-2018 %%%%%%%%%%%%%%%%%%%
+clc; 
+algorithm = 'l2_Poly_PCA'; % minimizes the frobenius norm of error,
+                           % l1_Poly_PCA is work in progress
 
-% learning rate should drop with 1/iter
-% unit norm of noise
-%%
-Exponents =  sortPoly(d,maxDeg);
-ToKeep = nchoosek(d+maxDeg,d);
-delay = 20;
-%% preprocess using pca
-[y,yEmbedded,coeffs,x0] = preprocess(y,d,ToKeep,delay);
- %% whiten data
-% [U,S,V] = svd(y);
-% y = S*V';
-% y = V(:,1:ToKeep)';
-[n,T] = size(y);
-theta = [1 -.99];
-% theta = 1;
-etaS = 1e-3;
-lambda = 100*ones(d+1,T);
-% lambda = 0;
-penalty = 'l2'; p = 2;
-c = linspace(1,10,T);
-
-%% Initialization Type I : Random spikes
-% A = randn(n,ToKeep);
-% s = randn(d+1,T);
-% x = filter(1,theta,s,[],2);
-% x = x./sum(x,2);
-% x(end,:) = 1;
-% X = x2X(x,Exponents);
-
-% %% Initialization Type II: PCA+embedding
-% A = randn(n,ToKeep);
-x = x0;
-x = x./sum(x,2);
-x(end,:) = 1;
-s = filter(theta,1,x,[],2);
-X = x2X(x,Exponents);
-A = y*X'/(X*X');
+% Notes:
+% Learning rate should drop with 1/iter
 
 %%
-iter = 1;
-pos = 0;
-converged = false;
-nmse_prev = Inf;
+Exponents =  sortPoly(d,maxDeg); % sorts all the exponents in monomials or order <= maxDeg in d variables.
+ToKeep = nchoosek(d+maxDeg,d);   % number of monomials of order <= maxDeg in d variables
+delay = 20;                      % Delay value used in embedding of the PC components (in samples).
+%% preprocess using PCA and Delayed embedding
+% preprocess data by PCA or other linear transforms to reduce dimensionality
+[y,yEmbedded,coeffs,x0] = preprocess(y,d,ToKeep,delay); 
+% choose default solver parameters
+[n,T,theta,etaS,lambda,penalty,p,c,iter,pos,converged,nmse_prev,type] = PolyPCA_DefaultParams(y,d);
+% initialize the solver
+[A,s,x,X] = InitializePolyPCA(type,y,n,ToKeep,d,T,theta,x0,Exponents);
+
+%% perform gradient descent
 while ~converged
-    E = y-A*X;
-    nmse_current = 100*norm(E,'fro')/norm(y,'fro');
-    switch algorithm
-        case 'l2_Poly_PCA'
+    E = y-A*X;                                      % residual
+    nmse_current = 100*norm(E,'fro')/norm(y,'fro'); % estimate of nmse
+    switch algorithm                                % choose the gradient type based on the chosen norm
+        case 'l2_Poly_PCA'                          % backprojected error signal gets calculated first
     EbackProj = A'* E;
         case 'l1_Poly_PCA'
     EbackProj = A'* sign(E);
     end
-    dp = dpenalty(s,penalty,p);
-    dx = dX2dx(x,Exponents);
-    gx0 = gradx(dx,EbackProj);
-    gx = gx0 + randn(size(gx0)).*(1);
-    gs = fliplr(filter(1,theta,fliplr(gx),[],2)) + lambda.*dp;
-    s(1:d,:) = s(1:d,:) - etaS*gs(1:d,:);
-    x(1:d,:) = filter(1,theta,s(1:d,:),[],2);
-    x(end,:) = 1;
+    dp = dpenalty(s,penalty,p);                     % gradient of the penalty function on innovations
+    dx = dX2dx(x,Exponents);                        % gradient of the monomials in latents
+    gx0 = gradx(dx,EbackProj);                      % overall gradient with respect to the latents
+    gx = gx0 + randn(size(gx0)).*(1);               % add random noise to escape saddle points
+    gs = fliplr(filter(1,theta,fliplr(gx),[],2)) + lambda.*dp;  % overall gradient with respect to innovations
+    s(1:d,:) = s(1:d,:) - etaS*gs(1:d,:);           % gradient descent on innovations
+    x(1:d,:) = filter(1,theta,s(1:d,:),[],2);       % update latents by integrating innovations
+    x(end,:) = 1;                                   % set the constant equal to 1 (avoids a separate gradient step)
     
-    pos = plotX(x,d,c,iter,nmse_current,pos);
-    iter = iter +1;
-    if nmse_current > nmse_prev
+    pos = plotX(x,d,c,iter,nmse_current,pos);       % display the latents
+    if nmse_current > nmse_prev                     % update the step size with a momentum for better convergence
         etaS = 0.9*etaS;
     else
         etaS = 1.01*etaS;
     end
-    nmse_prev = nmse_current;
-    converged = convergence(y,E,iter);
-    if nmse_current < 10
-        lambda = 0.9*lambda;
+    
+    iter = iter +1;                                 % next iteration
+    nmse_prev = nmse_current;                       % update nmse
+    converged = convergence(y,E,iter);              % check if converged
+    if nmse_current < 10                            % if error < 10% penalize the innovations less for better fit
+        lambda = 0.9*lambda;                        
     end
-    X = x2X(x,Exponents);
-    A = y*X'/(X*X');
+    X = x2X(x,Exponents);                           % transform latents to monomials
+    A = y*X'/(X*X');                                % perform least squares to obtain coefficients
 end
 end
