@@ -25,11 +25,11 @@ ToKeep = nchoosek(d+maxDeg,d);   % number of monomials of order <= maxDeg in d v
 delay = 20;                      % Delay value used in embedding of the PC components (in samples).
 %% preprocess using PCA and Delayed embedding
 % preprocess data by PCA or other linear transforms to reduce dimensionality
-[y,yEmbedded,coeffs,x0] = preprocess(y,d,ToKeep,delay); 
+[y,coeffs] = preprocess(y,ToKeep); 
 % choose default solver parameters
 [n,T,theta,etaS,lambda,penalty,p,c,iter,pos,converged,nmse_prev,type] = PolyPCA_DefaultParams(y,d);
 % initialize the solver
-[A,s,x,X] = InitializePolyPCA(type,y,n,ToKeep,d,T,theta,x0,Exponents);
+[A,s,x,X] = InitializePolyPCA(type,y,maxDeg,n,ToKeep,d,T,theta,Exponents,delay);
 
 %% perform gradient descent
 while ~converged

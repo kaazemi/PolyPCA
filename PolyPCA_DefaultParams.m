@@ -10,8 +10,9 @@ iter = 1;                       % Gradient descent iteration
 pos = 0;                        % position of the displayed message in fprintf
 converged = false;              % convergence flag
 nmse_prev = Inf;                % initial normalized mean squared error
-initialization_type = 'EMPCA';  % initialization for the solution
+initialization_type = 'ROTPCA'; % initialization for the solution
                                 % 'EMPCA': PCA on delayed embedded PC of data
                                 % 'random': random initialization
+                                % 'ROTPCA': rotation of PC components to lie on the polynomial manifold
 end
 
