@@ -1,4 +1,4 @@
-function [x,x_reordered,X] = rank1_ALS(X,d,k)
+function [x,x_reordered,X,X_reordered] = rank1_ALS(X,d,k,permuteFlag)
 % Finds the best rank 1 estimate to X
 % Each column of X is the vectorized form of the lower triangular part of the tensor x(^k)
 [~,T] = size(X);
@@ -26,6 +26,7 @@ for t = 1:T
     X(:,t) = x2X(z,Exponents);
 end
     x_reordered = reorder(x);
+    X_reordered = x2X(x_reordered,Exponents);
 end
 
 function Z = tprod(z,k)

@@ -27,7 +27,8 @@ delay = 20;                      % Delay value used in embedding of the PC compo
 % preprocess data by PCA or other linear transforms to reduce dimensionality
 [y,coeffs] = preprocess(y,ToKeep); 
 % choose default solver parameters
-[n,T,theta,etaS,lambda,penalty,p,c,iter,pos,converged,nmse_prev,type] = PolyPCA_DefaultParams(y,d);
+[n,T,theta,etaS,lambda,penalty,p,c,iter,pos,converged,nmse_prev,type,saddleSigma] = PolyPCA_DefaultParams(y,d);
+% [beta1,beta2,m,v,mhat,vhat,alpha,epsilon] = AdamDefaultParams;
 % initialize the solver
 [A,s,x,X] = InitializePolyPCA(type,y,maxDeg,n,ToKeep,d,T,theta,Exponents,delay);
 
@@ -41,18 +42,25 @@ while ~converged
         case 'l1_Poly_PCA'
     EbackProj = A'* sign(E);
     end
-    dp = dpenalty(s,penalty,p);                     % gradient of the penalty function on innovations
-    dx = dX2dx(x,Exponents);                        % gradient of the monomials in latents
-    gx0 = gradx(dx,EbackProj);                      % overall gradient with respect to the latents
-    gx = gx0 + randn(size(gx0)).*(1);               % add random noise to escape saddle points
+    dp = dpenalty(s,penalty,p);                    % gradient of the penalty function on innovations
+    dx = dX2dx(x,Exponents);                       % gradient of the monomials in latents
+    gx = gradx(dx,EbackProj);                      % overall gradient with respect to the latents
     gs = fliplr(filter(1,theta,fliplr(gx),[],2)) + lambda.*dp;  % overall gradient with respect to innovations
-    s(1:d,:) = s(1:d,:) - etaS*gs(1:d,:);           % gradient descent on innovations
+    gs = gs + randn(size(gs)).*(saddleSigma);      % add random noise to escape saddle points
+    s(1:d,:) = s(1:d,:) - etaS*gs(1:d,:);          % gradient descent on innovations
+%     s(1:d,:) = s(1:d,:) - alpha*mhat./(sqrt(vhat)+epsilon).*gs(1:d,:);           % gradient descent on innovations
     x(1:d,:) = filter(1,theta,s(1:d,:),[],2);       % update latents by integrating innovations
+    x = x./max(abs(x),[],2);
     x(end,:) = 1;                                   % set the constant equal to 1 (avoids a separate gradient step)
     
     pos = plotX(x,d,c,iter,nmse_current,pos);       % display the latents
+%     m = beta1*m+(1-beta1)*gs(1:d,:);
+%     v = beta2*v+(1-beta2)*gs(1:d,:).^2;
+%     mhat = m/(1-beta1^iter);
+%     vhat = v/(1-beta2^iter);
+    
     if nmse_current > nmse_prev                     % update the step size with a momentum for better convergence
-        etaS = 0.9*etaS;
+        etaS = 0.95*etaS;
     else
         etaS = 1.01*etaS;
     end
@@ -64,6 +72,7 @@ while ~converged
         lambda = 0.9*lambda;                        
     end
     X = x2X(x,Exponents);                           % transform latents to monomials
+    y = orth(randn(n))*y;
     A = y*X'/(X*X');                                % perform least squares to obtain coefficients
 end
 end

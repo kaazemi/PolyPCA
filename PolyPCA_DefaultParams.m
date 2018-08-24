@@ -1,4 +1,5 @@
-function [n,T,theta,etaS,lambda,penalty,p,c,iter,pos,converged,nmse_prev,initialization_type] = PolyPCA_DefaultParams(y,d)
+function [n,T,theta,etaS,lambda,penalty,p,c,iter,...
+          pos,converged,nmse_prev,initialization_type,saddleSigma] = PolyPCA_DefaultParams(y,d)
 [n,T] = size(y);
 theta = [1 -.99];               % Autoregressive model parameters for the latents: x_t = .99 x_{t-1} + s_t
                                 % theta = 1 corresponds to no temporal structure.
@@ -14,5 +15,7 @@ initialization_type = 'ROTPCA'; % initialization for the solution
                                 % 'EMPCA': PCA on delayed embedded PC of data
                                 % 'random': random initialization
                                 % 'ROTPCA': rotation of PC components to lie on the polynomial manifold
+                                % 'ROOTGPCA': k'th root + Generalized Principal Component Analysis 
+saddleSigma = 0.5;                % standard deviation of noise added to gradients to escape saddle points
 end
 
