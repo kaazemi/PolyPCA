@@ -1,20 +1,24 @@
 function [A,s,x,X] = InitializePolyPCA(type,y,maxDeg,n,ToKeep,d,T,theta,Exponents,delay)
 addpath(genpath(pwd));
+PolyPCA_messages('initialization',type)
 switch type
     case 'random' 
         %% Initialization Type I : Random spikes
-        A = randn(n,ToKeep);
+        A = randn(n,ToKeep); PolyPCA_messages('Coeffs','random Gaussians')
         s = randn(d+1,T);
         x = filter(1,theta,s,[],2);
         x = x./sum(x,2);
         x(end,:) = 1;
-    case 'EMPCA' % Delayed Embedding + PCA
+        X = x2X(x,Exponents);
+    case {'EMPCA','PCA'} % Delayed Embedding + PCA
         %% Initialization Type II: Embedding+PCA
-        EmbeddingDim = 2*d+1;
-        if delay > 0 
-        yEmbedded = embed(y,EmbeddingDim,delay);
+        
+        if delay == 0 || strcmp(type,'PCA') 
+            yEmbedded = y;
         else
-        yEmbedded = y;
+            EmbeddingDim = 2*d+1;
+            yEmbedded = embed(y,EmbeddingDim,delay);
+            PolyPCA_messages('Embedding',delay,EmbeddingDim);
         end
         [~,x] = pca(yEmbedded','centered',false,'Numcomponents',d+1);
 
@@ -23,7 +27,7 @@ switch type
         x(end,:) = 1;
         s = filter(theta,1,x,[],2);
         X = x2X(x,Exponents);
-        A = y*X'/(X*X')+randn(n,ToKeep);
+        A = y*X'/(X*X'); PolyPCA_messages('Coeffs','least squares')
     case 'ROTPCA' % PCA + Rotation
         
         [L,Centers] = kmeans(y',ToKeep);
@@ -46,12 +50,13 @@ switch type
         x(end,:) = 1;
         s = filter(theta,1,x,[],2);   
         X = x2X(x,Exponents);
-        A = y*X'/(X*X')+randn(n,ToKeep);
+        A = y*X'/(X*X'); PolyPCA_messages('Coeffs','least squares')
         
-        case 'ROOTGPCA' % Root + GPCA
+        case 'ROOTGPCA' % Root + GPCA %incomplete
         rtym = (y - min(y,[],2)).^(1/maxDeg);
-        g = gpca_pda_spectralcluster(rtym,d)
+        g = gpca_pda_spectralcluster(rtym,d);
         
+            
 end
         
 end

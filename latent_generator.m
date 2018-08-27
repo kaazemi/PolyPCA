@@ -1,14 +1,23 @@
 clear; clc; close all
+% type = 'vdp'; 
+type = 'complex';
+% type = 'spiral';
 options = odeset('MaxStep',0.1,'RelTol',1e-8,'AbsTol',1e-10);
-% temp = inputdlg('Enter mu value');
-% mu = str2double(temp{1,1});
-mu = 3;
-[t,x] = ode45(@(t,x) vdp1_1(t,x,mu),[0 8],[2; 0],options);
-x1 = x(:,1);
-a = 1.2;
-x1(x1<-a) = -2*a-x1(x1<-a);
-x(:,1) = x1;
-% [t,x] = ode45(@(t,x) spiral(t,x),[0 5],[2; 0],options);
+
+switch  type
+    case 'vdp'
+        mu = 3;
+        [t,x] = ode45(@(t,x) vdp1(t,x,mu),[0 10],[2; 0],options);
+    case 'complex'
+        mu = 3;
+        [t,x] = ode45(@(t,x) vdp1_1(t,x,mu),[0 8],[2; 0],options);
+        x1 = x(:,1);
+        a = 1.2;
+        x1(x1<-a) = -2*a-x1(x1<-a);
+        x(:,1) = x1;
+    case spiral
+        [t,x] = ode45(@(t,x) spiral(t,x),[0 5],[2; 0],options);
+end
 x = x';
 figure(1),
 subplot(2,2,1)
@@ -35,6 +44,12 @@ y_noisy = y + mismatch + noise;
 subplot(2,2,2);
 imagesc(y_noisy);
 x_gt = x;
+
+function dxdt = vdp1(t,y,mu)
+dxdt = zeros(2,1);
+    dxdt(1) = y(2);
+    dxdt(2) = mu * (1-y(1)^2)*y(2)-y(1);
+end
 
 function dxdt = vdp1_1(t,y,mu)
 dxdt = zeros(2,1);

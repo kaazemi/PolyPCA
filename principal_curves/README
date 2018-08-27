@@ -1,0 +1,16 @@
+Please refer to http://www.science.uva.nl/~jverbeek for papers about
+this software.
+The code is not meant to explain deatails of the algorithm, but merely
+to show how it works on data. So no/sparse comments.
+For questions: jverbeek@science.uva.nl
+You may use this code for non-commercial use, if the author and corresponding
+url are mentioned.
+
+
+See the header of k_seg_soft.m for more details
+
+to get a quick taste of the algorithm:
+
+> X=get_data(300,0.03,'cros3');
+> k_seg_soft(X,14,2*.03^2,1,1);
+

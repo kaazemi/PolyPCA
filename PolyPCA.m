@@ -12,10 +12,11 @@ function [A,x,X,Exponents] = PolyPCA(y,d,maxDeg,fs)
 % Exponents: monomial exponents in lexicographic order
 %%%%%%%%%% Copyright 2018 by Abbas Kazemipour %%%%%%%%%%%%%
 %%%%%%%%%%%% Last updated on 08-20-2018 %%%%%%%%%%%%%%%%%%%
-clc; 
+clc;
+rng(12,'twister');
 algorithm = 'l2_Poly_PCA'; % minimizes the frobenius norm of error,
                            % l1_Poly_PCA is work in progress
-
+PolyPCA_messages('start',d,maxDeg)
 % Notes:
 % Learning rate should drop with 1/iter
 
@@ -31,6 +32,7 @@ delay = 20;                      % Delay value used in embedding of the PC compo
 % [beta1,beta2,m,v,mhat,vhat,alpha,epsilon] = AdamDefaultParams;
 % initialize the solver
 [A,s,x,X] = InitializePolyPCA(type,y,maxDeg,n,ToKeep,d,T,theta,Exponents,delay);
+% pos = plotX(x,d,c,iter,nmse_prev,pos);       % display the latents
 
 %% perform gradient descent
 while ~converged
@@ -46,33 +48,21 @@ while ~converged
     dx = dX2dx(x,Exponents);                       % gradient of the monomials in latents
     gx = gradx(dx,EbackProj);                      % overall gradient with respect to the latents
     gs = fliplr(filter(1,theta,fliplr(gx),[],2)) + lambda.*dp;  % overall gradient with respect to innovations
-    gs = gs + randn(size(gs)).*(saddleSigma);      % add random noise to escape saddle points
+%     gs = gs + randn(size(gs)).*(saddleSigma);      % add random noise to escape saddle points
     s(1:d,:) = s(1:d,:) - etaS*gs(1:d,:);          % gradient descent on innovations
 %     s(1:d,:) = s(1:d,:) - alpha*mhat./(sqrt(vhat)+epsilon).*gs(1:d,:);           % gradient descent on innovations
     x(1:d,:) = filter(1,theta,s(1:d,:),[],2);       % update latents by integrating innovations
-    x = x./max(abs(x),[],2);
-    x(end,:) = 1;                                   % set the constant equal to 1 (avoids a separate gradient step)
-    
-    pos = plotX(x,d,c,iter,nmse_current,pos);       % display the latents
-%     m = beta1*m+(1-beta1)*gs(1:d,:);
-%     v = beta2*v+(1-beta2)*gs(1:d,:).^2;
-%     mhat = m/(1-beta1^iter);
-%     vhat = v/(1-beta2^iter);
-    
-    if nmse_current > nmse_prev                     % update the step size with a momentum for better convergence
-        etaS = 0.95*etaS;
-    else
-        etaS = 1.01*etaS;
-    end
-    
-    iter = iter +1;                                 % next iteration
+    x = x + saddleSigma*randn(size(x));             % add random noise to escape saddle points
+    x = postprocess(x,iter);
+    [etaS,~,lambda,~] = updatePolyPCAparams(iter,nmse_current,nmse_prev,etaS,saddleSigma,lambda);
     nmse_prev = nmse_current;                       % update nmse
     converged = convergence(y,E,iter);              % check if converged
-    if nmse_current < 10                            % if error < 10% penalize the innovations less for better fit
-        lambda = 0.9*lambda;                        
-    end
     X = x2X(x,Exponents);                           % transform latents to monomials
     y = orth(randn(n))*y;
+    PolyPCA_messages('rotatedY',iter)
     A = y*X'/(X*X');                                % perform least squares to obtain coefficients
+    iter = iter +1;                                 % next iteration
+    pos = plotX(x,d,c,iter,nmse_current,pos);       % display the latents
+
 end
 end
