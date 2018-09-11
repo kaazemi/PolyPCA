@@ -1,10 +1,27 @@
-function [A,s,x,X] = InitializePolyPCA(y,Exponents,opts)
+function [A,s,x,X,E,opts] = InitializePolyPCA(y,Exponents,opts)
 addpath(genpath(pwd));
+switch opts.algorithm
+    case {'ALS','als'}
+        opts.initialization_type = 'ALS';        
+end
 if isfield(opts,'x_init')
     opts.initialization_type = 'user';
 end
 PolyPCA_messages('initialization',opts.initialization_type)
 switch opts.initialization_type
+    case 'zeros'
+        A = randn(opts.n,opts.ToKeep); PolyPCA_messages('Coeffs','random Gaussians')
+        x = zeros(opts.d+1,opts.T);
+        x(end,:) = 1;
+        s = filter(opts.theta,1,x,[],2);
+        X = x2X(x,Exponents);
+    case 'ones'
+        g = sum(abs(y).^(1/opts.maxDeg));
+        x = g.*ones(opts.d+1,opts.T);
+        x(end,:) = 1;
+        s = filter(opts.theta,1,x,[],2);
+        X = x2X(x,Exponents);     
+        A = randn(opts.n,opts.ToKeep); PolyPCA_messages('Coeffs','random Gaussians')        
     case 'random'
         %% Initialization Type I : Random spikes
         A = randn(opts.n,opts.ToKeep); PolyPCA_messages('Coeffs','random Gaussians')
@@ -65,7 +82,11 @@ switch opts.initialization_type
         s = filter(opts.theta,1,x,[],2);
         X = x2X(x,Exponents);
         A = y*X'/(X*X'); PolyPCA_messages('Coeffs','least squares')
+    case 'ALS'
+         A = randn(opts.n,opts.ToKeep); PolyPCA_messages('Coeffs','random Gaussians');
+         
 end
-
+    E = y-A*X;                                              % residual
+    opts.nmse_current = 100*norm(E,'fro')/norm(y,'fro');    % estimate of nmse   
 end
 

@@ -9,17 +9,21 @@ function [A,x,X,Exponents,opts] = PolyPCA(y,d,maxDeg,opts)
     % opts.x_init = initial estimate of the latents: should be of size
     % (d+1)*T, where T is the number of samples in data matrix, 
     % last row of x will be set to 1 automatically.
+    % For more information about other options please see PolyPCA_DefaultParams.m
 % Outputs:
 % A: coefficients of the fit monomials
 % x: latents
 % X: monomials resulting from the latents
 % Exponents: monomial exponents in lexicographic order
+% opts: optimization parameters
 %%%%%%%%%% Copyright 2018 by Abbas Kazemipour %%%%%%%%%%%%%
-%%%%%%%%%%%% Last updated on 08-29-2018 %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%% Last updated on 09-11-2018 %%%%%%%%%%%%%%%%%%%
 % Notes:
 % Learning rate should drop with 1/iter
 clc;
-rng(12,'twister'); opts.pwd = pwd;
+% rng(12,'twister');
+opts.pwd = pwd; 
+opts.params.rng = rng;
 % choose default solver parameters
 opts = PolyPCA_DefaultParams(y,d,maxDeg,opts);
 PolyPCA_messages('start',opts.d,opts.maxDeg)
@@ -29,36 +33,22 @@ Exponents =  sortPoly(opts.d,opts.maxDeg);      % sorts all the exponents in mon
 
 % preprocess data by PCA or other linear transforms to reduce dimensionality
 [y,opts] = preprocess(y,opts); 
-% [beta1,beta2,m,v,mhat,vhat,alpha,epsilon] = AdamDefaultParams;
 % initialize the solver
-[A,s,x,X] = InitializePolyPCA(y,Exponents,opts);
-% pos = plotX(x,d,c,iter,nmse_prev,pos);       % display the latents
+[A,s,x,X,E,opts] = InitializePolyPCA(y,Exponents,opts);
 
 %% perform gradient descent
 while ~opts.converged
+    gs = PolyPCAgrad(s,x,A,E,Exponents,opts);
+    [s,x,X,opts] = LatentUpdate(x,s,gs,Exponents,opts);
+    [A,gA] = CoeffUpdate(y,A,X,opts);
+    opts = updatePolyPCAparams(y,E,x,opts,gs,gA);
     E = y-A*X;                                              % residual
     opts.nmse_current = 100*norm(E,'fro')/norm(y,'fro');    % estimate of nmse
-    switch opts.algorithm                                   % choose the gradient type based on the chosen norm
-        case 'l2_Poly_PCA'                                  % backprojected error signal gets calculated first
-    EbackProj = A'* E;
-        case 'l1_Poly_PCA'
-    EbackProj = A'* sign(E);
+    if opts.iter == 500
+        opts.etaS = 1e-3;
+        opts.etaA = 1e-3;
     end
-    dp = dpenalty(s,opts.penalty,opts.p);                       % gradient of the penalty function on innovations
-    dx = dX2dx(x,Exponents);                                    % gradient of the monomials in latents
-    gx = gradx(dx,EbackProj);                                   % overall gradient with respect to the latents
-    gs = fliplr(filter(1,opts.theta,fliplr(gx),[],2)) + opts.lambda.*dp;  % overall gradient with respect to innovations
-%     gs = gs + randn(size(gs)).*(opts.saddleSigma);            % add random noise to escape saddle points
-    s(1:opts.d,:) = s(1:opts.d,:) - opts.etaS*gs(1:opts.d,:);   % gradient descent on innovations
-%     s(1:opts.d,:) = s(1:opts.d,:) - alpha*mhat./(sqrt(vhat)+epsilon).*gs(1:opts.d,:);           % gradient descent on innovations
-    x(1:opts.d,:) = filter(1,opts.theta,s(1:d,:),[],2);         % update latents by integrating innovations
-    x = x + opts.saddleSigma*randn(size(x));                    % add random noise to escape saddle points
-    x = postprocess(x,opts);
-    [opts.etaS,~,opts.lambda,~,opts.nmse_prev,opts.converged,opts.iter] = updatePolyPCAparams(y,E,x,opts);
-    X = x2X(x,Exponents);                                   % transform latents to monomials
-    y = orth(randn(opts.n))*y;
     PolyPCA_messages('rotatedY',opts.iter)
-    A = y*X'/(X*X');                                        % perform least squares to obtain coefficients
     opts = plotX(x,opts);                                   % display the latents
 end
 
