@@ -25,7 +25,7 @@ if opts.d == 2 || opts.d > 3
     if opts.converged; colorbar
     end
 else
-    scatter3(x(1,:),x(2,:),x(3,:),[],oopts.params.colors); colorbar
+    scatter3(x(1,:),x(2,:),x(3,:),[],opts.params.colors); colorbar
 end
 set(gca,'fontsize',fontsize);
 

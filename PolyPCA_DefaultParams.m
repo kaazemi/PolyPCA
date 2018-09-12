@@ -12,7 +12,7 @@ opts = AdamDefaultParams(opts);
 
 opts.CoeffsUpdate = init('GD','CoeffsAlg',opts); % How to update the polynomial coefficients: LS: least squares
                                                  %                                            GD: Gradient Descent
-opts.maxIter = init(1e4-1,'maxIter',opts);       % maximum algorithm iterations
+opts.maxIter = init(1e3-1,'maxIter',opts);       % maximum algorithm iterations
 opts.theta = init(1,'theta',opts);               % Autoregressive model parameters for the latents: x_t = .99 x_{t-1} + s_t
                                                  % theta = 1 corresponds to no temporal structure.
 opts.etaS = init(1e-3,'etaS',opts);              % learning rate (aka step size) for gradient descent which adaptively changes with a momentum
