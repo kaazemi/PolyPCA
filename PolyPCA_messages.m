@@ -40,7 +40,28 @@ switch mname
         if varargin{1} == 1
             fprintf('Whitening latents per iteration \n')
         end
-
+    case 'CoeffsUpdateMethod'
+        switch varargin{1}
+            case 'LS'
+                fprintf('Performing "Least Squares" updates on the polynomial coefficients \n')
+            case 'GD'
+                fprintf('Performing "Gradient Descent" updates on the polynomial coefficients \n')
+            otherwise
+                error
+        end
+    case 'StepSize'
+        switch varargin{1}
+            case {'Adam','ADAM'}
+                fprintf('Step size chosen using ADAM optimizer \n')
+            case 'fixed'
+                fprintf('Step size chosen using adaptive backtracking \n')
+            otherwise
+                error
+        end
+    case 'SGD'
+        if varargin{1}
+             fprintf(['Performing Stochastic Gradient Descent: batch size = ' num2str(varargin{2})  ' \n'])
+        end
     otherwise
         error('Message not defined')
 end        

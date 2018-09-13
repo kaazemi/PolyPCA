@@ -1,15 +1,14 @@
-function [A,gA] = CoeffUpdate(y,A,X,opts)
-gA = -(y*X'- A*(X*X'));
+function [A,gA] = CoeffUpdate(yMP,A,X,opts)
+gA = -(yMP*X'- A(opts.SGSubset,:)*(X*X'));
 switch opts.CoeffsUpdate
     case 'GD'
         switch opts.GradientStep
             case 'fixed'
-                A = A - opts.etaA.*gA;
+                A(opts.SGSubset,:) = A(opts.SGSubset,:) - opts.etaA.*gA;
             case {'Adam','ADAM'}
-                A = A - opts.DeltaA;
+                A(opts.SGSubset,:) = A(opts.SGSubset,:) - opts.DeltaA;
         end
     case 'LS'
-        
-        A = y*X'/(X*X');                                        % perform least squares to obtain coefficients
+        A(opts.SGSubset,:) = yMP*X'/(X*X');        % perform least squares to obtain coefficients
 end
 end

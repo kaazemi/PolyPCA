@@ -1,3 +1,6 @@
+% In order to recontruct the example in the paper load Data.mat and run
+% [A,x,X,Exponents] = PolyPCA(y,2,2,opts);
+
 %% How to Use this code:
 %% Step 1: Generate latent variables and observations
 latent_generator 

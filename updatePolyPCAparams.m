@@ -18,11 +18,11 @@ switch opts.GradientStep
         opts.DeltaS = opts.Adam.mhat./sqrt(opts.Adam.vhat+opts.Adam.epsilon);
         switch opts.CoeffsUpdate
             case 'GD'
-                opts.Adam.Coeffs.m = opts.Adam.Coeffs.beta1*opts.Adam.Coeffs.m + (1-opts.Adam.Coeffs.beta1)*gA;
-                opts.Adam.Coeffs.v = opts.Adam.Coeffs.beta2*opts.Adam.Coeffs.v+(1-opts.Adam.Coeffs.beta2)*gA.^2;
-                opts.Adam.Coeffs.mhat = opts.Adam.Coeffs.m/(1-opts.Adam.Coeffs.beta1^opts.iter);
-                opts.Adam.Coeffs.vhat = opts.Adam.Coeffs.v/(1-opts.Adam.Coeffs.beta2^opts.iter);
-                opts.DeltaA = opts.Adam.Coeffs.mhat./sqrt(opts.Adam.Coeffs.vhat+opts.Adam.Coeffs.epsilon);
+                opts.Adam.Coeffs.m(opts.SGSubset,:) = opts.Adam.Coeffs.beta1*opts.Adam.Coeffs.m(opts.SGSubset,:) + (1-opts.Adam.Coeffs.beta1)*gA;
+                opts.Adam.Coeffs.v(opts.SGSubset,:) = opts.Adam.Coeffs.beta2*opts.Adam.Coeffs.v(opts.SGSubset,:)+(1-opts.Adam.Coeffs.beta2)*gA.^2;
+                opts.Adam.Coeffs.mhat(opts.SGSubset,:) = opts.Adam.Coeffs.m(opts.SGSubset,:)/(1-opts.Adam.Coeffs.beta1^opts.iter);
+                opts.Adam.Coeffs.vhat(opts.SGSubset,:) = opts.Adam.Coeffs.v(opts.SGSubset,:)/(1-opts.Adam.Coeffs.beta2^opts.iter);
+                opts.DeltaA = opts.Adam.Coeffs.mhat(opts.SGSubset,:)./sqrt(opts.Adam.Coeffs.vhat(opts.SGSubset,:)+opts.Adam.Coeffs.epsilon);
         end
         
 end
@@ -48,7 +48,9 @@ end
 
 
 opts.nmse_prev = opts.nmse_current;             % update nmse
-opts.converged = convergence(y,E,opts);         % check if converged
+if opts.iter > 1
+    opts.converged = convergence(y,E,opts);         % check if converged
+end
 opts.iter = opts.iter +1;                       % next iteration
 if mod(opts.iter,100) == 0
     outStruct.x_init = x;

@@ -24,12 +24,13 @@ switch opts.initialization_type
         A = randn(opts.n,opts.ToKeep); PolyPCA_messages('Coeffs','random Gaussians')        
     case 'random'
         %% Initialization Type I : Random spikes
-        A = randn(opts.n,opts.ToKeep); PolyPCA_messages('Coeffs','random Gaussians')
+        A = randn(opts.n,opts.ToKeep); PolyPCA_messages('Coeffs','random Gaussians');
         s = randn(opts.d+1,opts.T);
         x = filter(1,opts.theta,s,[],2);
         x = x./sum(x,2);
         x(end,:) = 1;
         X = x2X(x,Exponents);
+%         A = y*X'/(X*X'+eye(opts.ToKeep)*1e-4); PolyPCA_messages('Coeffs','least squares')
     case {'EMPCA','PCA'} % Delayed Embedding + PCA
         %% Initialization Type II: Embedding+PCA
         

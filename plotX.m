@@ -1,19 +1,18 @@
 function opts = plotX(x,opts)
 fontsize = 16;
 figure(2);
-
-subplot(2,1,1);
-plot(x(1:opts.d,:)','linewidth',4);
 if opts.iter == 2
-   opts.params.xtick = get(gca,'xtick');
+   colormap(jet)
 end
+subplot(2,1,1);
+% % plot(x(1:opts.d,:)','linewidth',4);
+scatter(repmat(opts.params.colors,1,opts.d),vec(x(1:opts.d,:)'),[],repmat(opts.params.colors,1,opts.d));
 if isfield(opts.params,'fs')
    opts.params.xtick = opts.params.xtick/fs;
 end
 
 title('Latents')
 set(gca,'fontsize',fontsize);
-xticks(opts.params.xtick);
 if isfield(opts.params,'fs')
     xlabel('Time (Seconds)')
 else

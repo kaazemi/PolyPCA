@@ -1,7 +1,11 @@
 clear; clc; close all
-% type = 'vdp'; 
-type = 'complex';
+type = 'vdp'; 
+% type = 'complex';
 % type = 'spiral';
+% type = 'random';
+% type = 'grid';
+% type = 'circle';
+% type = 'line';
 options = odeset('MaxStep',0.1,'RelTol',1e-8,'AbsTol',1e-10);
 
 switch  type
@@ -15,8 +19,18 @@ switch  type
         a = 1.2;
         x1(x1<-a) = -2*a-x1(x1<-a);
         x(:,1) = x1;
-    case spiral
+    case 'spiral'
         [t,x] = ode45(@(t,x) spiral(t,x),[0 5],[2; 0],options);
+    case 'random'
+        x = rand(1000,2);
+    case 'grid'
+        [x1, x2] = meshgrid(-3:.2:3);
+        x = [x1(:),x2(:)];
+    case 'circle'
+        t = linspace(0,2*pi,500)';
+        x = [cos(t),sin(t)];
+    case 'line'
+        x = repmat(linspace(-1,1,1000),2,1)';
 end
 x = x';
 figure(1),
@@ -28,12 +42,13 @@ subplot(2,2,4); plot(x','linewidth',2)
 x(end+1,:) = 1;
 %%
 k = 2; 
-n = 100;
+n = 50;
 d = size(x,1)-1;
 Exponents =  sortPoly(d,k);
 ToKeep = nchoosek(d+k,d);
 X = x2X(x,Exponents);
 A_gt = randn(n,ToKeep);
+% A_gt(:,end) = 0;
 A_mismatch = randn(n,d);
 y = A_gt*X;
 sigma = 0.1;
