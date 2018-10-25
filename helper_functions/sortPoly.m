@@ -1,5 +1,6 @@
 function [E,iExponents] = sortPoly(nVar,maxDeg)
 % sorts monomials of maximum degree maxDeg in nVar variables in lexicographic order
+% ith column in E corresponds to ith variable
 P = primes(100);
 P = P(1:nVar+1);
  Exponents = zeros((nVar+1)^maxDeg,nVar+1); % x1 x2 ... xd 1

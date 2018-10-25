@@ -1,14 +1,15 @@
-function [A,gA] = CoeffUpdate(yMP,A,X,opts)
-gA = -(yMP*X'- A(opts.SGSubset,:)*(X*X'));
+function [A,gA] = CoeffUpdate(y,A,dLA,X,opts)
+% X = X(:,opts.MPSubset);
+gA = -opts.ProjectionMtx*(y*X'- A*(X*X'+opts.lambdaA*eye(opts.ToKeep)))+dLA;
 switch opts.CoeffsUpdate
-    case 'GD'
-        switch opts.GradientStep
+    case {'GD','gd'}
+        switch lower(opts.GradientStep)
             case 'fixed'
-                A(opts.SGSubset,:) = A(opts.SGSubset,:) - opts.etaA.*gA;
-            case {'Adam','ADAM'}
-                A(opts.SGSubset,:) = A(opts.SGSubset,:) - opts.DeltaA;
+                A = A - opts.etaA.*gA;
+            case 'adam'
+                A = A - opts.DeltaA;
         end
-    case 'LS'
-        A(opts.SGSubset,:) = yMP*X'/(X*X');        % perform least squares to obtain coefficients
+    case {'LS','ls'}
+        A = y*X'/(X*X'+opts.lambdaA*eye(opts.ToKeep));        % perform least squares to obtain coefficients
 end
 end

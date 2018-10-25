@@ -1,18 +1,21 @@
-function x = postprocess(x,opts)
-% and get rid of close local minima
-%     x(1:opts.d,:) = orth(randn(opts.d))*x(1:opts.d,:);           % do a random rotation
-      x = x - mean(x,2);
-%     x = whiten(x,opts.d);                                % whiten x
-%     PolyPCA_messages('whiten',opts.iter)
-%     x(1:d,1:d) = eye(d);
-%     x = x-min(x,[],2);
-%     x(1:opts.d,:) = (x(1:opts.d,1:opts.d))\x(1:opts.d,:);
-
-    x = x./max(abs(x),[],2);
-    x(end,:) = 1;                                   % set the constant equal to 1 (avoids a separate gradient step)
-%     if mod(opts.maxDeg,2) == 0
-%         x = abs(x);
-%     end
+function [x,opts] = postprocess(x,opts)
+if opts.postProcess
+    switch opts.LiftingMethod
+        case {'Projection','projection','project'}
+            x = x./max(abs(x),[],2);
+            C = cov(x(1:opts.d,:)');
+            [V,~] = eig(C);
+            opts.SubspaceCoeffs = V(:,end-opts.TargetLatentDim+1:end)';
+            P = opts.SubspaceCoeffs'*opts.SubspaceCoeffs;
+            x(1:opts.d,:) = P*x(1:opts.d,:);
+        case {'penalty','Penalty'}
+            sq = sqrtm(pinv(cov(x')));
+            x = sq*x;
+        otherwise 
+            error
+    end
+end
+    	x(end,:) = 1;                                   % set the constant equal to 1 (avoids a separate gradient step) 
 end
 
 function x = whiten(x,d)

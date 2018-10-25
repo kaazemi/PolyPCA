@@ -11,4 +11,4 @@ latent_generator
 %% Step 2: Run Poly-PCA
 d = 2; %latent dimension
 maxDeg = 2; %maximum polynomial degree
-[A,x,X,Exponents] = PolyPCA(y,d,maxDeg);
+opts = PolyPCA(y,d,maxDeg);

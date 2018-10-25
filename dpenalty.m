@@ -1,15 +1,15 @@
-function dp = dpenalty(x,penalty,p)
+function dp = dpenalty(x,p)
 [d,T] = size(x);
-dp = zeros(d,T);
-switch penalty
-    case 'l2'
-        
-        dp(1:d-1,:) = 2*x(1:d-1,:);
-    case 'l1'
-        dp(1:d-1,:) = sign(x(1:d-1,:));
-    case 'lp'
-        dp(1:d-1,:) = p*x(1:d-1,:).^(p-1);
+% dp = zeros(d,T);
+switch p
+    case 2
+%         dp(1:d-1,:) = 2*x(1:d-1,:);
+        dp = 2*x;
+    case 1
+%         dp(1:d-1,:) = sign(x(1:d-1,:));
+        dp = sign(x);
     otherwise
-        error('invalid penalty type');
+%         dp(1:d-1,:) = p*x(1:d-1,:).^(p-1);
+        dp = p*x.^(p-1);
 end
 end

@@ -1,6 +1,6 @@
-function [converged, nmse] = convergence(y,E,opts)
+function converged = convergence(opts)
 %% Checks for convergence of the gradient descent
-% Stops if 1000 iterations reached or nmse < 0.1 %
+% Stops if maximum iterations reached or nmse < 0.1 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Inputs:
 % y: data to be fit
@@ -10,7 +10,5 @@ function [converged, nmse] = convergence(y,E,opts)
 % nmse: normalized mean squared error
 % converged: convergence flag
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-nmse = norm(E,'fro')/norm(y,'fro');
-converged = nmse < 0.001 || opts.iter == opts.maxIter; %||...
-%norm(etaX*dx,'fro')/norm(Xold(1:end-1,:),'fro') < 0.001;
+converged = opts.nmse_current < 0.1 || opts.iter == opts.maxIter || opts.explained_var > 99.9;
 end

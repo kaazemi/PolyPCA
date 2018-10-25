@@ -1,14 +1,14 @@
 function opts = AdamDefaultParams(opts)
-switch opts.GradientStep
-    case {'Adam','ADAM'}
+switch lower(opts.GradientStep)
+    case 'adam'
         opts.Adam.beta1 = 0.9;
         opts.Adam.beta2 = 0.999;
-        opts.Adam.m = 1e-3;
-        opts.Adam.v = 1e-3;
+        opts.Adam.m = 1e-3*ones(opts.d,opts.T);
+        opts.Adam.v = 1e-3*ones(opts.d,opts.T);
         opts.Adam.alpha = 1e-3;
         opts.Adam.epsilon = 1e-8;
-        opts.Adam.mhat = 0;
-        opts.Adam.vhat = 0;
+        opts.Adam.mhat = zeros(opts.d,opts.T);
+        opts.Adam.vhat = zeros(opts.d,opts.T);
         opts.DeltaS = 0;
 
         opts.Adam.Coeffs.beta1 = 0.9;
@@ -21,8 +21,8 @@ switch opts.GradientStep
         opts.Adam.Coeffs.vhat = zeros(opts.n,opts.ToKeep);
         opts.DeltaA = 0;
     case 'fixed'
-        opts.etaS = init(1e-3,'etaS',opts);      % initial step size for backtracking latents
-        opts.etaA = init(1e-3,'etaA',opts);      % initial step size for backtracking coefficients
+        opts.etaS = init(1e-1,'etaS',opts);                                % initial step size for backtracking latents
+        opts.etaA = init(1e-3*ones(opts.n,opts.ToKeep),'etaA',opts);      % initial step size for backtracking coefficients
 end
 
 
