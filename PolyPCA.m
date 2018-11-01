@@ -22,35 +22,32 @@ clc; warning('off')
 % rng(12,'twister');
 % choose default solver parameters
 opts.pwd = pwd; 
-[opts,y, Exponents,params] = PolyPCA_DefaultParams(y,d,maxDeg,opts);
+[opts,y,params] = PolyPCA_DefaultParams(y,d,maxDeg,opts);
 
 % initialize the solver
-[A,s,x,X,E,opts] = InitializePolyPCA(y,Exponents,opts);
-% y = opts.LinearTransform*y;
-gA = 0;
+[A,s,x,X,Sigmax,E,opts] = InitializePolyPCA(y,params.Exponents,opts);
+gA = 0; dLA = 0;
+
 % load B; opts.Q = B; A  = A_gt; 
 %% perform gradient descent
 while ~opts.converged
-    [gs,dLA,opts] = PolyPCAgrad(s,x,A,E,Exponents,opts);
-    [s,x,X,opts] = LatentUpdate(x,s,gs,Exponents,opts); 
-    switch lower(opts.algorithm)
-        case 'convex'
-            A = eye(opts.ToKeep);
-%             [opts.Q,opts.Inv_QQt_Q] = SVP(X*y',opts.sigmaMin);%\(y*y') which is identity
-%             y = opts.Q*y;
-            % No CoeffUpdate
-            A0 = y*X'/(X*X');
-            E0 = y-A0*X;
-            [opts,E] = updatePolyPCAparams(y,E0,A,x,X,opts,gs,gA);               
-        otherwise
-            [A,gA] = CoeffUpdate(y,A,dLA,X,opts);
-            [opts,E] = updatePolyPCAparams(y,E,A,x,X,opts,gs,gA);   
+    switch lower(opts.SolverAlgorithm)
+            case 'power'
+                DoPowerIteration
+            case 'vgd'
+                DoVanillaGradientDescent
+            case 'admm'
+                DoADMM
+        otherwise 
+            error
     end
     opts = plotX(x,opts);                                   % display the latents
 end
+opts.Innovations = s;
 opts.yOut = y;
 opts.Aout = A;
 opts.Latents = x;
 opts.LatentsVeronese = X;
-opts.Exponents = Exponents;
+opts2params;
+opts.params = params;
 end

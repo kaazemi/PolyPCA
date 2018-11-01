@@ -68,29 +68,21 @@ x(end+1,:) = 1;
 
 d = size(x,1)-1;
 k = 2; 
-
-d = size(x,1)-1;
-Exponents =  sortPoly(d,k);
-ToKeep = nchoosek(d+k,d);
-n = ToKeep;
-% n = 1000;
-X = x2X(x,Exponents);
-A_gt = randn(n,ToKeep);
-% A_gt(:,end) = 0;
-A_mismatch = randn(n,d);
-y = A_gt*X;
-[Uy,Sy,Vy]= svd(y);
-% Sy(1:n,1:n) = eye(n);
-% y = Sy*Vy';
-% y = Vy';
-y = Vy(:,1:ToKeep)';
-sigma = 2;
-noise = sigma*randn(size(y));
-mismatch = A_mismatch*(abs(x(1:d,:).^1.5)+log(1+abs(x(1:d,:))));
-y_noisy = y + mismatch + noise;
-
+n = 100;
+T = length(t);
+Exponents =  sortPoly(d+n,k);
+ToKeep = nchoosek(d+n+k,k);
+A_gt = .1*randn(n,ToKeep);
+for time = 1:T
+if time>1
+X = x2X([y(:,time-1);x(:,time)],Exponents);
+else
+X = x2X([zeros(n,1);x(:,time)],Exponents);
+end
+y(:,time) = A_gt*X;
+end
 subplot(2,2,2);
-imagesc(y_noisy);
+imagesc(y);
 x_gt = x;
 
 function dxdt = vdp1(t,y,mu)

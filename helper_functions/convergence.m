@@ -10,5 +10,5 @@ function converged = convergence(opts)
 % nmse: normalized mean squared error
 % converged: convergence flag
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-converged = opts.nmse_current < 0.1 || opts.iter == opts.maxIter || opts.explained_var > 99.9;
+converged = opts.nmse_current < 0.1 || opts.iter == opts.params.maxIter  || opts.explained_var > 99.9;
 end
